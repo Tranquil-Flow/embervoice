@@ -1,0 +1,24 @@
+{
+  "repo": "mlx-community/Breeze-TTS-2-mlx-8bit",
+  "revision": "c6e4a2ff6ab9afba68b7853de802273ffe23fb49",
+  "gated": false,
+  "source": "https://huggingface.co/api/models/mlx-community/Breeze-TTS-2-mlx-8bit/revision/c6e4a2ff6ab9afba68b7853de802273ffe23fb49?blobs=true",
+  "note": "Pinned upstream file list. Sizes are byte counts; blob_id is the Git blob SHA1, sha256 the LFS sha256 when the file is LFS-tracked. No local paths.",
+  "total_bytes": 4602694423,
+  "files": [
+    {"path": "LICENSE", "size": 18856, "blob_id": "49042cbf1fc9b601425343878a30ab476648ccd5", "sha256": null},
+    {"path": "NOTICE", "size": 146, "blob_id": "9192feffc4e3cb414ea93d947ab3364fa13fd9c4", "sha256": null},
+    {"path": "README.md", "size": 863, "blob_id": "7c53dd37c9b084432c71661af1d16af856901fcf", "sha256": null},
+    {"path": "audio_tokenizer/config.json", "size": 2336, "blob_id": "06cc8dc4c5ec8a1929086b71b98c313020d9268b", "sha256": null},
+    {"path": "audio_tokenizer/configuration.json", "size": 76, "blob_id": "ab58e2eaf53cd14a1a2a7527d9261ceea93a24cd", "sha256": null},
+    {"path": "audio_tokenizer/model.safetensors", "size": 682293092, "blob_id": "026d66bfb5d730dcfd56450c5e9e51b3ef4e0712", "sha256": "836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258"},
+    {"path": "audio_tokenizer/preprocessor_config.json", "size": 234, "blob_id": "ba40914f4f49ab98a8ca545d4892ef7291a39592", "sha256": null},
+    {"path": "config.json", "size": 12379, "blob_id": "6e6d15c56c71815e899066f1cd9c06ea3e143e6c", "sha256": null},
+    {"path": "generation_config.json", "size": 251, "blob_id": "da03eee098c41e30790890d4c998325ddc1bd0b9", "sha256": null},
+    {"path": "model.safetensors", "size": 3885721536, "blob_id": "2a1fbf7b75dcac9041efe4bda5c4ff577e3ed26b", "sha256": "d7a82315bcc59c3057f13bb85100743c7cd40692e38145fb255d6c1f0bf447bc"},
+    {"path": "model.safetensors.index.json", "size": 98863, "blob_id": "d53d90e9fd68419a9d44f7a0ea37d2ed681affa5", "sha256": null},
+    {"path": "special_tokens_map.json", "size": 886, "blob_id": "1556c52ad39a242591f2dd6ed0401bd3582ba005", "sha256": null},
+    {"path": "tokenizer.json", "size": 33386945, "blob_id": "fb1416c4de06b8c5a2dced4098f5c2aa101ba9cc", "sha256": "d3ec9ac3eb2392389b9f5112e85d8b43316494addb587ba7b7a9d61eac23af96"},
+    {"path": "tokenizer_config.json", "size": 1157960, "blob_id": "466af463b97cdd1e912320df115ce3bdd54d1a85", "sha256": null}
+  ]
+}
