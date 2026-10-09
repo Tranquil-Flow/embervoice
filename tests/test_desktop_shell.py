@@ -196,8 +196,8 @@ def test_info_plist_contract() -> None:
     assert plist["CFBundleIdentifier"] == "org.tranquilflow.embervoice"
     assert plist["CFBundleName"] == "Embervoice"
     assert plist["CFBundleExecutable"] == "Embervoice"
-    assert plist["CFBundleShortVersionString"] == "0.1.0"
-    assert plist["CFBundleVersion"] == "0.1.0"
+    assert plist["CFBundleShortVersionString"] == "0.1.1"
+    assert plist["CFBundleVersion"] == "0.1.1"
     assert plist["LSMinimumSystemVersion"] == "26.0"
 
 

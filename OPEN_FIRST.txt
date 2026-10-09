@@ -1,0 +1,22 @@
+EMBERVOICE — START HERE
+
+1. Drag Embervoice into Applications.
+2. Open Applications and double-click Embervoice. Your browser opens.
+3. Read the voice agreement in the app. If you accept, click Download voice model.
+   This is a one-time ~4.6 GB download; leave room for your audiobooks too.
+4. Add an EPUB, choose a narrator and try Generate preview.
+   Then choose Generate full book. Finished books appear on Your shelf.
+
+IF YOUR MAC BLOCKS IT
+This preview isn't Apple-notarized. Only if you trust this project's download:
+System Settings > Privacy & Security > Open Anyway, then confirm Open.
+Never switch off Mac security. Work Mac? Your administrator may need to help.
+
+Requires an Apple-chip Mac (M1 or newer), macOS 26+, and 16 GB memory or more.
+English/Chinese EPUBs only. Personal/non-commercial use; respect book and voice rights.
+No Terminal or extra software needed. Internet is needed for initial voice setup.
+
+To exit, choose Quit in the small Embervoice window (not just the browser tab).
+Updating? Quit the old app, then replace it in Applications. Saved books stay put.
+
+Help: https://github.com/Tranquil-Flow/embervoice/blob/main/HELP.md

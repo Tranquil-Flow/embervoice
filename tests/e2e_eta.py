@@ -1,4 +1,4 @@
-"""Browser proof: indeterminate-between-saves bar, then measured ETA."""
+"""Browser proof: indeterminate-between-saves bar, then first-passage ETA."""
 
 from e2e_support import URL as TEST_URL, mock_ready
 import time
@@ -26,7 +26,7 @@ def status(step):
         "stage_message": "Narrating chapter 1/1",
         "started_at": start,
         "error": None,
-        "eta_narration_seconds": 120 if step == 2 else None,
+        "eta_narration_seconds": 180 if step == 1 else 120 if step == 2 else None,
         "eta_samples": 2 if step >= 2 else step,
         "log": ["Narrating chapter 1/1"],
         "passages_done": saved,
@@ -65,7 +65,7 @@ with sync_playwright() as p:
         {"name": "fixture.epub", "mimeType": "application/epub+zip", "buffer": b"fixture"}
     )
     page.get_by_role("button", name="Generate full book").click()
-    expect(page.locator("#progress-caption")).to_contain_text("Estimating after two new passages")
+    expect(page.locator("#progress-caption")).to_contain_text("Timing the first new passage")
     expect(page.locator(".progress-track")).to_have_class("progress-track is-working")
     assert (
         page.evaluate("getComputedStyle(document.querySelector('.progress-track'),'::after').animationName") != "none"

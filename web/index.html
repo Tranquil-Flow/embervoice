@@ -5,16 +5,16 @@
 <header class="masthead"><a class="brand" href="/" aria-label="Embervoice home"><span class="brand-mark" aria-hidden="true">✦</span><span>Ember<i>voice</i></span></a><div class="masthead-right"><div class="burn"><label for="burn">🔥 Fire</label><input id="burn" type="range" min="0" max="100" step="1" value="30" aria-valuetext="Hearth"><output id="burn-name" for="burn">Hearth</output></div><div class="local-indicator"><span class="pulse" aria-hidden="true"></span><span id="local-state">Local · private · offline</span></div></div></header>
 <section id="setup-panel" class="card setup-panel" aria-labelledby="setup-title">
 <h2 id="setup-title">Set up the voice model</h2>
-<p>One explicit online step, then offline narration. The server downloads the pinned model from Hugging Face; your books, voice clips and prompts are never sent there. Installation of Python and app dependencies is a separate online step.</p>
+<p>Download the voice once, then make audiobooks offline. No extra software is needed in the Mac app. Your books and recordings stay on your Mac.</p>
 <p id="setup-size">Checking the pinned model size…</p>
-<p><strong>Apple Silicon Mac · macOS 26 or later · 16 GB RAM or more.</strong> The model and its generated audio are for non-commercial use. Only convert books you have the right to use, and clone voices with the speaker’s consent and rights to the clip. Generated narration is synthetic.</p>
+<p><strong>Apple-chip Mac (M1 or newer) · macOS 26 or later · 16 GB memory or more.</strong> The model and its generated audio are for non-commercial use. Only convert books you have the right to use, and clone voices with the speaker’s consent and rights to the clip. Generated narration is synthetic.</p>
 <details class="setup-legal"><summary>Read the full BreezeBlue Research and Non-Commercial License Agreement</summary><pre id="setup-license">Loading the bundled licence…</pre></details>
 <label class="setup-consent"><input id="setup-accept" type="checkbox"> I have read and independently accept the model licence, including its non-commercial output restrictions.</label>
 <p id="setup-blockers" class="notice" role="alert"></p>
 <p id="setup-status" role="status">Checking local setup…</p>
 <p id="setup-progress" class="hint hidden" aria-live="polite"></p>
 <div class="actions"><button id="setup-start" class="btn btn-primary" type="button" disabled>Download voice model</button><button id="setup-cancel" class="text-button hidden" type="button">Cancel download</button></div>
-<p class="hint">Cancel keeps downloaded data for resumption. Nothing downloads until you accept and press the button. Existing local weights still require your own acceptance. No model weights are included in this app.</p>
+<p class="hint">You choose when to download. Cancel keeps partial files so you can resume. Read and accept the agreement even if you already have the voice files.</p>
 </section>
 <main class="workbench">
 <aside class="rail" aria-labelledby="library-title"><div class="rail-head"><h2 id="library-title" class="label">Your shelf</h2><small>Finished audiobooks</small></div><section id="library-panel" class="library-panel hidden" aria-label="Completed audiobooks"><div id="library-list" class="library-list"></div></section><p class="shelf-empty">Books appear here once a full audiobook is finished.</p></aside>

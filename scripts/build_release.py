@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import zipfile
+import tomllib
 
 ROOT = Path(__file__).resolve().parent.parent
 TOP_LEVEL = (
@@ -15,6 +16,9 @@ TOP_LEVEL = (
     "embervoice_entry.py",
     "setup.py",
     "README.md",
+    "HELP.md",
+    "TECHNICAL.md",
+    "OPEN_FIRST.txt",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
     "RELEASE_STATUS.md",
@@ -60,7 +64,8 @@ def public_files(root=ROOT):
 def build(root=ROOT, destination=None):
     root = Path(root)
     files = public_files(root)
-    destination = Path(destination or root / "dist/embervoice-0.1.0-source.zip")
+    version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+    destination = Path(destination or root / f"dist/embervoice-{version}-source.zip")
     destination.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in files:

@@ -26,6 +26,7 @@ Real-model scripts require `STUDIO_REAL_MODEL=1`, the exact licence independentl
 uv sync --locked --extra voice --extra test --extra build
 .venv/bin/python scripts/build_ffmpeg.py
 .venv/bin/python scripts/build_macos.py
+.venv/bin/python scripts/package_macos.py
 ```
 
 The native shell uses only installed macOS system frameworks. The onedir helper contains Python, its needed packages and the LGPL-only audio tools, with no weights. Bundled third-party notices include the Python runtime and native library licences. The exact FFmpeg source archive accompanies the binary, together with its checksum and configuration. `desktop/Embervoice.spec` is a maintained input, not an automatically generated spec.

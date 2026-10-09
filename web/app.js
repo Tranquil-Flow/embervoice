@@ -67,9 +67,9 @@ function renderJob(data){const wasActive=job&&['running','cancelling'].includes(
  const active=['running','cancelling'].includes(data.state);show('work-signal',active);show('low-memory-badge',active&&Boolean(data.low_memory));show('low-memory-run',data.state==='error'&&data.error_code==='low_memory');$('work-signal').classList.toggle('is-working',data.state==='running');lightCandle(data.state==='running');
  $('work-stage').textContent=data.state==='cancelling'?'Stopping the current worker…':data.stage_message||'Preparing local narration…';
  if(active){updateClock();if(!clockTimer)clockTimer=setInterval(updateClock,1000)}else stopClock();
- const total=book?book.chapters.reduce((n,c)=>n+c.passages,0):0;
+ const total=data.passages_total??(book?book.chapters.reduce((n,c)=>n+c.passages,0):0);
  const previewSaved=Boolean(data.preview_url),saved=data.mode==='preview'?(previewSaved?1:0):data.passages_done;feedHearth(data,saved);
- $('job-count').textContent=data.mode==='preview'?`${saved} / 1 preview passage`:`${saved} / ${total} passages`;
+ $('job-count').textContent=data.mode==='preview'?`${saved} / 1 preview passage`:`${saved} / ${total} passages saved`;
  const percent=data.mode==='preview'?(previewSaved?100:0):(total?Math.min(100,Math.round(100*saved/total)):0);
  const track=$('progress-fill').parentElement;
  $('progress-fill').style.width=`${percent}%`;track.setAttribute('aria-valuenow',String(percent));
@@ -81,11 +81,12 @@ function renderJob(data){const wasActive=job&&['running','cancelling'].includes(
  else if(data.state==='running'&&data.mode==='full'){
    const seconds=data.eta_narration_seconds;
    progressNote=Number.isFinite(seconds)&&seconds>0
-     ?`Rough narration ETA: ~${Math.max(1,Math.ceil(seconds/60))} min remaining · ${data.eta_samples} measured passages; encoding extra`
-     :'Estimating after two new passages · saved passage progress is exact';
+     ?`Rough narration ETA: ~${Math.max(1,Math.ceil((data.eta_total_seconds??seconds)/60))} min total · ~${Math.max(1,Math.ceil(seconds/60))} min remaining · ${data.eta_basis==='previous'?'previous preview/run':`${data.eta_samples} measured passage${data.eta_samples===1?' (provisional)':'s'}`} · loading/encoding extra`
+     :'Timing the first new passage for an ETA · saved passage progress is exact';
  }
  $('progress-caption').textContent=progressNote;
- $('job-detail').textContent=data.error|| (data.state==='running'?`Completed ${data.chapters_done} chapters. You can leave this page open; generated passages are saved as they finish.`:data.state==='cancelled'?'Finished passages remain on disk. Start again with the same voice direction to resume.':data.mode==='preview'?'Listen below, then generate the full book when ready.':'Each chapter and the combined M4B are ready.');
+ const section=data.current_chapter,part=data.current_passage_index,partTotal=book?.chapters[section-1]?.passages;
+ $('job-detail').textContent=data.error|| (data.state==='running'?`${section?`Section ${section}/${book?.chapters.length||'?'} · passage ${part||1}/${partTotal||'?'} in this section. `:''}Completed ${data.chapters_done} sections. The counter above counts saved passages, not the passage currently being narrated.`:data.state==='cancelled'?'Finished passages remain on disk. Start again with the same voice direction to resume.':data.mode==='preview'?'Listen below, then generate the full book when ready.':'Each chapter and the combined M4B are ready.');
  $('job-log').textContent=(data.log||[]).join('\n');
  show('player-panel',data.mode==='preview'&&Boolean(data.preview_url));if(data.mode==='preview'&&data.preview_url&&$('audio-player').getAttribute('src')!==data.preview_url)$('audio-player').src=data.preview_url;else if(data.mode!=='preview')$('audio-player').pause();
  show('downloads',Boolean(data.chapters.length||data.book_url));const links=$('download-links');links.replaceChildren();
@@ -96,7 +97,20 @@ function renderJob(data){const wasActive=job&&['running','cancelling'].includes(
 async function poll(){if(!job)return;try{const data=await api('/api/jobs/'+job.id);renderJob(data);if(['running','cancelling'].includes(data.state)){timer=setTimeout(poll,1200)}else{timer=null;if(data.state==='error'&&data.error_code!=='low_memory')notice(data.error||'Conversion failed')}}catch(e){timer=null;stopClock();if(e.message.includes('Unknown job')){job=null;stored.set('job','');show('job-panel',false);syncButtons()}notice(e.message+' — If the server restarted, submit the same book and voice direction to resume.')}}
 async function upload(file){if(!file)return;if(recording||capturePending){notice('Stop recording before changing books.');return}if(job&&['running','cancelling'].includes(job.state)){notice('Stop the current run before changing books.');return}if(!file.name.toLowerCase().endsWith('.epub')){notice('Please choose an EPUB file.');return}if(file.size>50*1024*1024){notice('EPUB exceeds the 50 MB limit.');return}
  notice('Inspecting your book locally…');$('drop-zone').setAttribute('aria-busy','true');try{const data=new FormData();data.append('file',file);const info=await api('/api/books',{method:'POST',body:data});if(timer)clearTimeout(timer);stopClock();job=null;show('job-panel',false);setBook(info);refreshLibrary();$('drop-zone').classList.add('hidden');stored.set('job','');}catch(e){notice(e.message)}finally{$('drop-zone').removeAttribute('aria-busy')}}
-async function start(mode,lowMemory=false){if(!book)return;const transcript=$('reference-text').value.trim();if(reference&&!transcript){notice('Enter the complete, exact words spoken in the voice clip first.');$('reference-text').focus();return}notice('');try{const chapter=mode==='preview'?previewChapter(book):1;const data=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({book_id:book.id,style:$('style').value.trim(),mode,chapter,reference_id:reference?.id||null,reference_text:reference?transcript:null,preset:document.querySelector('input[name="voice"]:checked')?.value||null,allow_low_memory:lowMemory})});if(timer)clearTimeout(timer);renderJob(data);stored.set('job',data.id);poll();if(matchMedia('(max-width: 700px)').matches)$('job-panel').scrollIntoView({block:'nearest',behavior:reducedMotion.matches?'auto':'smooth'})}catch(e){notice(e.message)}}
+async function start(mode,lowMemory=false){
+ if(!book||job&&['running','cancelling'].includes(job.state))return;
+ const transcript=$('reference-text').value.trim();
+ if(reference&&!transcript){notice('Enter the complete, exact words spoken in the voice clip first.');$('reference-text').focus();return}
+ notice('');const chapter=mode==='preview'?previewChapter(book):1;
+ const request={book_id:book.id,style:$('style').value.trim(),mode,chapter,reference_id:reference?.id||null,reference_text:reference?transcript:null,preset:document.querySelector('input[name="voice"]:checked')?.value||null,allow_low_memory:lowMemory};
+ const pending={id:'pending-'+Date.now(),book_id:book.id,mode,state:'running',phase:'preparing',stage_message:'Starting local narration…',started_at:Date.now()/1000,current_chapter:chapter,current_passage_index:1,passages_done:0,chapters_done:0,chapters:[],log:[],low_memory:lowMemory,pending:true};
+ if(timer){clearTimeout(timer);timer=null}renderJob(pending);show('cancel',false);
+ if(matchMedia('(max-width: 700px)').matches)$('job-panel').scrollIntoView({block:'nearest',behavior:reducedMotion.matches?'auto':'smooth'});
+ try{
+   const data=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+   renderJob(data);stored.set('job',data.id);poll();
+ }catch(e){renderJob({...pending,state:'error',error:e.message});notice(e.message)}
+}
 async function init(){startHearth();try{presets=await api('/api/presets')}catch(e){notice('Local server unavailable: '+e.message);return}
  const savedStyle=stored.get('style');$('style').value=savedStyle||presets.warm;const savedPreset=stored.get('preset');if(savedPreset&&document.querySelector(`input[name="voice"][value="${savedPreset}"]`))document.querySelector(`input[name="voice"][value="${savedPreset}"]`).checked=true;
  document.querySelectorAll('input[name="voice"]').forEach(r=>r.addEventListener('change',()=>{if(r.checked){$('style').value=presets[r.value];stored.set('style',$('style').value);stored.set('preset',r.value);showFun();syncButtons()}}));
@@ -123,12 +137,12 @@ async function init(){startHearth();try{presets=await api('/api/presets')}catch(
  refreshLibrary();
  syncButtons();}
 
-/* Hearth: the fire level is a calm-to-inferno preference. The candle, the stoke, sparks and rising words follow only real job state:
-   the candle burns only while a run is underway, and each spark burst and word flurry marks a passage that is already saved on disk. */
+/* Hearth: words are decorative book text from the start of a request, not a progress meter.
+   The candle follows the active request; spark bursts alone mark newly saved passages. */
 const BURN_NAMES=['Embers','Hearth','Bonfire','Blaze','Inferno'];
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)'),darkScheme=matchMedia('(prefers-color-scheme: dark)');
 const fire={cv:null,g:null,ps:[],sp:[],eb:null,b:0,flash:0,acc:0,burn:.3,still:false,last:0,heat:null};
-const hearth={jobId:null,saved:0,pool:[]};
+const hearth={jobId:null,saved:0,pool:[],section:null};
 const working=()=>Boolean(job&&job.state==='running');
 function setBurn(value,save=true){const v=Math.max(0,Math.min(1,value));fire.burn=v;document.documentElement.style.setProperty('--burn',String(v));if(reducedMotion.matches)setHeat(v);const name=BURN_NAMES[Math.min(4,Math.floor(v*4.999))];$('burn').value=String(Math.round(v*100));$('burn').setAttribute('aria-valuetext',name);$('burn-name').textContent=name;fire.still=false;if(save)stored.set('burn',String(v))}
 /* the glow, candle and progress sheen follow the stoked heat, so a run lifts even Inferno past the slider's top */
@@ -156,27 +170,25 @@ function drawFire(){const {g,cv}=fire,W=cv.width,H=cv.height,b=Math.min(1,fire.b
  g.globalAlpha=1}
 function fireFrame(now){if(reducedMotion.matches){if(!fire.still){fire.ps=[];fire.sp=[];fire.eb=null;for(let i=0;i<90;i++)stepFire(1);fire.sp=[];drawFire();fire.still=true}fire.last=0}
  else{const dt=fire.last?Math.min(3,(now-fire.last)/16.67):1;fire.last=now;fire.still=false;stepFire(dt);drawFire()}requestAnimationFrame(fireFrame)}
-/* words rising from passages already saved to disk; amount and speed follow the fire level the user chose */
+/* Decorative words from the active section; amount and speed follow the chosen fire level. */
 const STOPWORDS=new Set('that this with from have been were they their them what when which while would could should there then than your into about such some other must just made very also only upon said will shall more most much many being does done here each every like over even after before because these those whom whose where how all and the for are but not you any can had her his its one our out was who may say she him own too yet nor'.split(' '));
 const wordsOf=text=>(text.match(/[\p{L}’']{4,}/gu)||[]).map(word=>word.replace(/[’']s$/,'')).filter(word=>word.length>=4&&!STOPWORDS.has(word.toLowerCase()));
 const chapterWordCache=new Map();
 function chapterWords(bookId,chapter){const key=bookId+':'+chapter;if(!chapterWordCache.has(key))chapterWordCache.set(key,fetch(`/api/books/${bookId}/chapters/${chapter}/passages`).then(r=>r.ok?r.json():{passages:[]}).then(data=>data.passages.map(p=>wordsOf(p.text||''))).catch(()=>[]));return chapterWordCache.get(key)}
 function locatePassage(info,index){let left=index;for(let i=0;i<info.chapters.length;i++){if(left<info.chapters[i].passages)return {chapter:i+1,index:left};left-=info.chapters[i].passages}return null}
-async function gatherWords(data,saved,flurry){const info=book;if(!info||info.id!==data.book_id)return;const last=locatePassage(info,saved-1);if(!last)return;const pool=[];let newest=[];
- for(let chapter=Math.max(1,last.chapter-2);chapter<=last.chapter;chapter++){const lists=await chapterWords(info.id,chapter);if(book!==info||hearth.jobId!==data.id)return;const upto=chapter===last.chapter?last.index+1:lists.length;lists.slice(0,upto).forEach(words=>pool.push(...words));if(chapter===last.chapter)newest=lists[last.index]||[]}
- hearth.pool=pool;if(flurry)wordFlurry(newest)}
-function wordFlurry(words){const b=fire.burn,picks=[...words].sort(()=>Math.random()-.5).slice(0,Math.round(4+b*14));picks.forEach((word,i)=>setTimeout(()=>riseWord(word,true),i*(200-b*120)+Math.random()*120))}
-/* a preview narrates passage 1 of its sample section, so its words come from the passage being voiced */
-async function previewWords(data,flurry){const info=book;if(!info||info.id!==data.book_id)return;const lists=await chapterWords(info.id,previewChapter(info));if(book!==info||hearth.jobId!==data.id)return;hearth.pool=lists[0]||[];if(flurry)wordFlurry(hearth.pool)}
+function wordFlurry(words){const id=hearth.jobId,b=fire.burn,picks=[...words].sort(()=>Math.random()-.5).slice(0,Math.round(4+b*14));picks.forEach((word,i)=>setTimeout(()=>{if(hearth.jobId===id&&working())riseWord(word,true)},i*(200-b*120)+Math.random()*120))}
 function riseWord(word,fromBottom){if(reducedMotion.matches||document.hidden)return;const el=document.createElement('span');el.className='smokeword';el.textContent=word;el.setAttribute('aria-hidden','true');
- const make=document.querySelector('.make').getBoundingClientRect(),right=make.left>innerWidth*.45?make.left-24:innerWidth-16,size=12+Math.random()*9,room=Math.max(40,right-24-word.length*size*.5);
+ const make=document.querySelector('.make').getBoundingClientRect(),bookEdge=$('book-panel').getBoundingClientRect().left,right=bookEdge>160?bookEdge-20:make.left>innerWidth*.45?make.left-24:innerWidth-16,size=12+Math.random()*9,room=Math.max(40,right-24-word.length*size*.5);
  el.style.fontSize=size+'px';el.style.left=(24+Math.random()*room)+'px';el.style.top=((fromBottom?.78+Math.random()*.14:.5+Math.random()*.38)*innerHeight)+'px';fire.cv.after(el);
  const b=fire.burn,dx=(Math.random()-.5)*60,dy=-(150+b*90+Math.random()*130),peak=(darkScheme.matches?.62:.5)*(.75+Math.random()*.25),duration=(8200-b*4600)+Math.random()*2200;
  el.animate([{opacity:0,transform:'translate(0,0) rotate(0)',filter:'blur(1px)'},{opacity:peak,offset:.18,filter:'blur(0)'},{opacity:peak*.8,offset:.6,transform:`translate(${dx*.6}px,${dy*.6}px) rotate(${dx/14}deg)`,filter:'blur(0)'},{opacity:0,transform:`translate(${dx}px,${dy}px) rotate(${dx/8}deg)`,filter:'blur(3px)'}],{duration,easing:'cubic-bezier(.2,.4,.4,1)'}).onfinish=()=>el.remove()}
-function feedHearth(data,saved){const same=hearth.jobId===data.id,grew=same&&saved>hearth.saved;if(!same)hearth.pool=[];hearth.jobId=data.id;hearth.saved=saved;
+async function activeWords(data,section){const info=book;if(!info||info.id!==data.book_id)return;const lists=await chapterWords(info.id,section);if(book!==info||hearth.jobId!==data.id||hearth.section!==section)return;const pool=lists.flat();if(pool.length)hearth.pool=pool}
+function feedHearth(data,saved){const same=hearth.jobId===data.id,grew=same&&saved>hearth.saved;hearth.jobId=data.id;hearth.saved=saved;
+ const section=data.current_chapter||(data.mode==='preview'&&book?previewChapter(book):locatePassage(book||{chapters:[]},saved)?.chapter||1);
+ if(!same){hearth.pool=book?wordsOf([book.title,book.chapters[section-1]?.title].filter(Boolean).join(' ')):[];hearth.section=null;if(working()&&hearth.pool.length)wordFlurry(hearth.pool)}
  if(grew&&!reducedMotion.matches)burst(36);
- if(data.mode==='preview'){if(!same||grew)previewWords(data,grew)}
- else if(saved>0&&(grew||!same))gatherWords(data,saved,grew)}
+ if(!same||hearth.section!==section){hearth.section=section;activeWords(data,section)}
+ if(grew&&hearth.pool.length)wordFlurry(hearth.pool)}
 function ambientWords(){const b=fire.burn;if(working()&&hearth.pool.length)riseWord(hearth.pool[Math.floor(Math.random()*hearth.pool.length)],false);setTimeout(ambientWords,(1100-b*920)*(.75+Math.random()*.5))}
 function startHearth(){fire.cv=$('fire');fire.g=fire.cv.getContext('2d');const size=()=>{fire.cv.width=innerWidth;fire.cv.height=innerHeight;fire.still=false};size();addEventListener('resize',size);
  const savedBurn=parseFloat(stored.get('burn'));setBurn(Number.isFinite(savedBurn)?savedBurn:.3,false);$('burn').addEventListener('input',()=>setBurn(Number($('burn').value)/100));

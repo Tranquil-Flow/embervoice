@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 — easier Mac setup and clearer generation feedback
+
+- Drag-to-Applications DMG and a short download-and-start guide; no Terminal or separate runtime installation.
+- Background book words appear as soon as a generation request starts, outside the book panels.
+- Provisional narration ETA after the first measured passage; reuse of previous same-voice preview/run timings.
+- Separate current-section information from the global saved-passage counter; unfinished audio files are not counted as saved.
+- Packaging regression checks and backend/Chromium generation-feedback coverage.
+
+Still an ad-hoc-signed, non-notarized preview with the same Mac requirements and non-commercial voice terms.
+
 ## 0.1.0 — initial preview
 
 - Local English/Chinese EPUB narration with previews, resumable passages, chapter M4As and a chapter-marked M4B.

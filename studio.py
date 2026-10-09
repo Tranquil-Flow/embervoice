@@ -7,6 +7,7 @@ import array
 import hashlib
 import inspect
 import json
+import math
 import os
 import platform
 import shutil
@@ -39,6 +40,7 @@ MAX_UNPACKED = 300 * 1024 * 1024
 ID = re.compile(r"^[0-9a-f]{32}$")
 REF_ID = re.compile(r"^[0-9a-f]{64}$")
 VERSION_ID = re.compile(r"^[0-9a-f]{16}$")
+PASSAGE_FILE = re.compile(r"^[0-9]{3}-[0-9]{4}\.wav$")
 PRESETS = {
     "warm": "A warm, grounded adult storyteller. Clear diction, gentle expression and an unhurried, natural cadence. Keep the same narrator voice across chapters; avoid theatrical exaggeration.",
     "literary": "A mature literary narrator with a smooth, resonant mid-range voice. Reflective, subtle, expressive on key lines, with natural pauses and measured pacing. Maintain a consistent voice.",
@@ -65,15 +67,52 @@ PRESET_ANCHORS = {
 
 
 def estimate_narration(samples: list[tuple[int, float]], total: int, done: int) -> int | None:
-    """Rough remaining synthesis time, excluding cold load and final encoding."""
+    """Provisional remaining synthesis time from the first measurement; encoding extra."""
     remaining = total - done
-    if len(samples) < 2 or remaining <= 0:
+    if not samples or remaining <= 0:
         return None
     measured_chars = sum(chars for chars, _ in samples)
     measured_seconds = sum(seconds for _, seconds in samples)
     if measured_chars <= 0 or measured_seconds <= 0:
         return None
     return max(1, round(measured_seconds * remaining / measured_chars))
+
+
+def load_narration_timings(output: Path) -> list[tuple[int, float]]:
+    """Small local, same-voice timing history; never infer timing from cached audio."""
+    path = output / "narration-timings.json"
+    try:
+        if path.is_symlink() or path.stat().st_size > 16384:
+            return []
+        data = json.loads(path.read_text())
+        if not isinstance(data, list):
+            return []
+        return [
+            (chars, seconds)
+            for chars, seconds in data[-20:]
+            if type(chars) is int
+            and chars > 0
+            and type(seconds) in (int, float)
+            and math.isfinite(seconds)
+            and seconds > 0
+        ]
+    except (OSError, ValueError, TypeError):
+        return []
+
+
+def save_narration_timings(output: Path, samples: list[tuple[int, float]]) -> None:
+    """Best-effort atomic metadata; a timing write must not abort saved narration."""
+    path = output / "narration-timings.json"
+    temp = output / ".narration-timings.tmp"
+    try:
+        if path.is_symlink() or temp.is_symlink():
+            return
+        fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "w") as stream:
+            json.dump(samples[-20:], stream)
+        os.replace(temp, path)
+    except OSError:
+        pass
 
 
 class JobRequest(BaseModel):
@@ -413,7 +452,11 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
     def version_summary(book_id: str, version_id: str, info: dict) -> dict:
         path = version_dir(book_id, version_id)
         manifest = json.loads((path / "manifest.json").read_text())
-        wavs = [p for p in (path / "passages").glob("[0-9][0-9][0-9]-*.wav") if p.is_file() and not p.is_symlink()]
+        wavs = [
+            p
+            for p in (path / "passages").glob("*.wav")
+            if PASSAGE_FILE.fullmatch(p.name) and p.is_file() and not p.is_symlink()
+        ]
         chapters = []
         for index, part in enumerate(manifest["chapters"], 1):
             matches = [p for p in (path / "chapters").glob(f"{index:03d}-*.m4a") if p.is_file() and not p.is_symlink()]
@@ -442,13 +485,18 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
 
     def snapshot(job: dict) -> dict:
         out = root / "books" / job["book_id"] / "versions" / job["version"]
-        wavs = sorted((out / "passages").glob("[0-9][0-9][0-9]-*.wav"))
+        wavs = sorted(
+            p
+            for p in (out / "passages").glob("*.wav")
+            if PASSAGE_FILE.fullmatch(p.name) and p.is_file() and not p.is_symlink()
+        )
         chapters = sorted((out / "chapters").glob("[0-9][0-9][0-9]-*.m4a"))
         book_file = next(iter(sorted(out.glob("*.m4b"))), None)
         prefix = "/api/jobs/" + job["id"] + "/files/"
         selected = [p for p in wavs if p.name == f"{job['chapter']:03d}-{job['passage']:04d}.wav"]
+        samples = job["timings"] or job["prior_timings"]
         eta = (
-            estimate_narration(job["timings"], job["total_characters"], job["done_characters"])
+            estimate_narration(samples, job["total_characters"], job["done_characters"])
             if job["mode"] == "full" and job["state"] == "running" and job["phase"] not in ("assembling", "ready")
             else None
         )
@@ -466,7 +514,12 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
             "stage_message": job["stage_message"],
             "started_at": job["started_at"],
             "eta_narration_seconds": eta,
-            "eta_samples": len(job["timings"]),
+            "eta_total_seconds": max(0, round(time.time() - job["started_at"])) + eta if eta is not None else None,
+            "eta_samples": len(samples),
+            "eta_basis": "current" if job["timings"] else "previous" if samples else None,
+            "passages_total": job["total_passages"],
+            "current_chapter": job["active_chapter"],
+            "current_passage_index": job["active_passage"],
             "passages_done": len(wavs),
             "chapters_done": len(chapters),
             "preview_url": prefix + "passages/" + quote(selected[0].name) if selected else None,
@@ -837,6 +890,18 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
         identity = style if not ref_audio else json.dumps([style, ref_id, ref_text, CLIP_CFG], ensure_ascii=False)
         version = correction["version"] if correction else hashlib.sha256(identity.encode()).hexdigest()[:16]
         out = target / "versions" / version
+        parsed = extract_book(target / "book.epub")
+        passage_chars = {
+            (ci, pi): len(text)
+            for ci, chapter in enumerate(parsed.chapters, 1)
+            for pi, text in enumerate(split_passages(chapter.text, correction["max_chars"] if correction else 320), 1)
+        }
+        cached = {
+            key
+            for key in passage_chars
+            if (out / "passages" / f"{key[0]:03d}-{key[1]:04d}.wav").is_file()
+            and not (out / "passages" / f"{key[0]:03d}-{key[1]:04d}.wav").is_symlink()
+        }
         job = {
             "id": uuid.uuid4().hex,
             "book_id": req.book_id,
@@ -850,10 +915,14 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
             "started_at": time.time(),
             "stage_message": "Preparing local model and checking host resources…",
             "log": ["Preparing local model and checking host resources…"],
-            "total_characters": 0,
-            "done_characters": 0,
+            "total_characters": sum(passage_chars.values()),
+            "total_passages": len(passage_chars),
+            "done_characters": sum(passage_chars[key] for key in cached),
             "timings": [],
-            "seen_passages": set(),
+            "prior_timings": load_narration_timings(out),
+            "seen_passages": cached,
+            "active_chapter": req.chapter if req.mode == "preview" else 1,
+            "active_passage": req.passage if req.mode == "preview" else 1,
             "current_passage": None,
         }
         with lock:
@@ -887,9 +956,13 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
                         line = message[:180]
                         if stage == "planning" and type(event.get("total_characters")) is int:
                             job["total_characters"] = max(0, event["total_characters"])
+                        if stage == "planning" and type(event.get("total_passages")) is int:
+                            job["total_passages"] = max(0, event["total_passages"])
                         key = (event.get("chapter"), event.get("passage"))
                         chars = event.get("characters")
                         valid_passage = all(type(n) is int and n > 0 for n in key) and type(chars) is int and chars > 0
+                        if valid_passage:
+                            job["active_chapter"], job["active_passage"] = key
                         if stage == "synthesizing" and valid_passage:
                             job["current_passage"] = (key, elapsed_clock())
                         elif stage in ("saved", "reused") and valid_passage:
@@ -901,6 +974,7 @@ def create_app(store: Path | None = None, runner=None, *, setup=None, readiness=
                                     duration = elapsed_clock() - current[1]
                                     if duration > 0:
                                         job["timings"].append((chars, duration))
+                                        save_narration_timings(out, job["prior_timings"] + job["timings"])
                             job["current_passage"] = None
                     except (ValueError, KeyError, TypeError):
                         line = "Worker sent an unreadable progress event"

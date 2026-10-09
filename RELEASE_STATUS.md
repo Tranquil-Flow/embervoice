@@ -1,8 +1,23 @@
-# Release status — 0.1.0 preview
+# Release status — 0.1.1 preview
+
+## 0.1.1 observed checks
+
+- **171 source tests passed** on macOS 26 Apple Silicon; one upstream Starlette/httpx deprecation warning. Ruff lint/format, JavaScript and shell syntax, lockfile validation and source/wheel builds passed.
+- The actual **Embervoice-mac.dmg** was checksum-verified and mounted read-only. It contains one app, an Applications shortcut and the short opening guide. The app was copied out to a separate temporary installation and its 0.1.1 version and ad-hoc signature were verified.
+- The copied native app launched its real frozen loopback server with an empty temporary HOME, an isolated library and PATH limited to `/usr/bin:/bin`. Its bundled MLX/Breeze/tokenizer and audio-tool diagnostics passed. Complete corresponding FFmpeg source was hash-verified.
+- The real first-run UI displayed the full agreement, left acceptance unchecked, and refused setup before acceptance. Browser checks observed no page errors, external page requests, autoplay or mobile horizontal overflow. No model agreement was accepted during these checks.
+- Chromium rendered the packaged generation UI with **controlled API replies**, checking immediate visible words outside the panels, first-sample total/remaining ETA, saved-passage/current-section distinction, retry and reduced motion. Backend tests also exercised real conversion/encoding using **synthetic tones**, not model narration.
+- Native shutdown reaped its owned helper. The owner's existing test app and library were not interrupted or changed.
+
+**No new real-model narration was performed for 0.1.1.** The 0.1.0 packaged-model check below is historical evidence, not a 0.1.1 rerun. Fresh-account quarantined Finder/Gatekeeper launch, genuinely empty-cache acquisition, subjective listening and long-book stability remain unqualified.
+
+For installation, use [the short home-page guide](README.md). The release's `SHA256SUMS` and `release-evidence.json` identify the exact DMG and developer source ZIP. The main download is the DMG, not GitHub's automatic source archive.
+
+## 0.1.0 qualification (historical)
 
 This initial preview is intentionally ad-hoc signed, not Developer ID signed or Apple notarized. The owner explicitly approved public unsigned Mac distribution and independently accepted the current BreezeBlue licence for isolated non-commercial release testing. Recipients must independently accept the model agreement themselves.
 
-## Observed qualification
+### Observed qualification (0.1.0)
 
 | Boundary | Observed result |
 |---|---|

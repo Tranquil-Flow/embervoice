@@ -555,14 +555,14 @@ def test_narration_eta_needs_measured_passages_and_excludes_cached_work():
     from studio import estimate_narration
 
     assert estimate_narration([], 1000, 0) is None
-    assert estimate_narration([(100, 10)], 1000, 100) is None
+    assert estimate_narration([(100, 10)], 1000, 100) == 90
     assert estimate_narration([(100, 10), (100, 20)], 1000, 200) == 120
     # Cached work is already done, but its unknown compute time is not a sample.
     assert estimate_narration([(100, 10), (100, 20)], 1000, 400) == 90
     assert estimate_narration([(100, 10), (100, 20)], 1000, 1000) is None
 
 
-def test_full_job_exposes_eta_only_after_two_new_saves(tmp_path, monkeypatch):
+def test_full_job_exposes_provisional_eta_after_first_save_then_refines(tmp_path, monkeypatch):
     import json
     import threading
     import studio
@@ -600,7 +600,8 @@ def test_full_job_exposes_eta_only_after_two_new_saves(tmp_path, monkeypatch):
         try:
             assert first.wait(2)
             state = client.get("/api/jobs/" + job["id"]).json()
-            assert state["eta_narration_seconds"] is None
+            assert state["eta_narration_seconds"] == 180
+            assert state["eta_samples"] == 1
             continue_second.set()
             assert second.wait(2)
             state = client.get("/api/jobs/" + job["id"]).json()

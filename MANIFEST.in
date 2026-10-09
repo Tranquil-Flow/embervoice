@@ -1,4 +1,4 @@
-include LICENSE NOTICE README.md CHANGELOG.md RELEASE_STATUS.md pyproject.toml uv.lock .python-version
+include LICENSE NOTICE README.md HELP.md TECHNICAL.md OPEN_FIRST.txt CHANGELOG.md RELEASE_STATUS.md pyproject.toml uv.lock .python-version
 include install.sh *.command setup.py model-files.json CONTRIBUTING.md .gitignore
 recursive-include .github/workflows *.yml
 recursive-include web *.html *.css *.js *.m4a

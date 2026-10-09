@@ -17,6 +17,9 @@ def test_public_archive_contains_legal_ui_lock_and_synthetic_fixtures(tmp_path):
         paths = archive.namelist()
         for name in [
             "LICENSE",
+            "HELP.md",
+            "TECHNICAL.md",
+            "OPEN_FIRST.txt",
             "NOTICE",
             "legal/BREEZE_LICENSE.txt",
             "uv.lock",
