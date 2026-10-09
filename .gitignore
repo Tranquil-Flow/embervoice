@@ -1,0 +1,16 @@
+.venv/
+.venv-*/
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+samples/
+.local/
+docs/VISUAL_REDESIGN_HANDOVER.md
+docs/redesign-before-web/
+*.epub
+!tests/fixtures/*.epub

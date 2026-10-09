@@ -1,0 +1,36 @@
+[project]
+name = "embervoice"
+version = "0.1.0"
+description = "Local, resumable EPUB-to-chapter audiobook conversion"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.13,<3.14"
+dependencies = ["EbookLib==0.20", "beautifulsoup4>=4.12,<5", "lxml>=5,<7", "fastapi==0.142.2", "uvicorn==0.54.0", "python-multipart>=0.0.12,<1", "huggingface-hub==1.33.0"]
+
+[project.optional-dependencies]
+build = ["pyinstaller==6.22.3"]
+voice = ["mlx-audio @ https://github.com/Blaizzy/mlx-audio/archive/feb25a37b07923bae556e59111995071d66afa0d.tar.gz", "mlx==0.32.3", "numpy==2.5.3"]
+test = ["pytest>=8,<10", "httpx==0.28.1", "playwright==1.63.0", "ruff>=0.14,<1"]
+
+[project.scripts]
+epub-audiobook = "audiobook:main"
+embervoice = "launcher:main"
+audiobook-studio = "launcher:main"
+
+[tool.setuptools]
+py-modules = ["audiobook", "studio", "model_setup", "launcher", "runtime"]
+
+[build-system]
+requires = ["setuptools==82.0.1", "wheel>=0.46,<1"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["browser: isolated Chromium tests", "timeout: bounded subprocess timeout annotation"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]

@@ -1,0 +1,38 @@
+{
+  "version": "9.0.2",
+  "source_url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+  "source_sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+  "configure": [
+    "--disable-gpl",
+    "--disable-nonfree",
+    "--disable-shared",
+    "--enable-static",
+    "--disable-autodetect",
+    "--disable-everything",
+    "--disable-doc",
+    "--disable-debug",
+    "--enable-ffmpeg",
+    "--enable-ffprobe",
+    "--enable-avcodec",
+    "--enable-avformat",
+    "--enable-avutil",
+    "--enable-swresample",
+    "--enable-swscale",
+    "--enable-avfilter",
+    "--enable-encoder=aac,pcm_s16le",
+    "--enable-decoder=aac,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le,pcm_u8,alac,opus,vorbis,mp3,flac",
+    "--enable-demuxer=mov,wav,matroska,mp3,flac,aac,ogg,concat,ffmetadata",
+    "--enable-muxer=ipod,mp4,wav,ffmetadata",
+    "--enable-parser=aac,mpegaudio,opus,vorbis,flac",
+    "--enable-protocol=file,pipe",
+    "--enable-filter=aresample,aformat,anull,atrim,asetpts",
+    "--enable-bsf=aac_adtstoasc",
+    "--arch=arm64",
+    "--target-os=darwin",
+    "--cc=clang"
+  ],
+  "tools": {
+    "ffmpeg": "b9cd364b4c696a747bab72dfd7f14f789c3149fa1d26ea35aaf2027ebfe193e9",
+    "ffprobe": "39b9e09bf3a3c20e07ae15a857316e06d67cdc966919a13a268f69d5a0a48eff"
+  }
+}

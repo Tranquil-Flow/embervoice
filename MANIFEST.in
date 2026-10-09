@@ -1,0 +1,14 @@
+include LICENSE NOTICE README.md CHANGELOG.md RELEASE_STATUS.md pyproject.toml uv.lock .python-version
+include install.sh *.command setup.py model-files.json CONTRIBUTING.md .gitignore
+recursive-include .github/workflows *.yml
+recursive-include web *.html *.css *.js *.m4a
+recursive-include anchors *.wav
+recursive-include legal *.txt *.json
+recursive-include tests *.py
+recursive-include tests/fixtures *.epub *.wav *.m4a *.webm *.ogg *.mp3 *.flac
+recursive-include scripts *.py
+recursive-include desktop *.swift *.plist *.spec *.png *.icns
+include embervoice_entry.py
+exclude docs/VISUAL_REDESIGN_HANDOVER.md
+prune samples
+prune .local

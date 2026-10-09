@@ -1,0 +1,19 @@
+Embervoice
+Copyright (c) 2026 Evi / Tranquil-Flow
+
+The project's source code is licensed under GNU AGPL version 3.
+See LICENSE. This software is provided without warranty.
+
+Breeze TTS 2 is licensed under the BreezeBlue Research and Non-Commercial License Agreement. Copyright (c) 2026 RESONIA, INC. All Rights Reserved.
+
+The model weights are not distributed with this project or Mac app. Each user must
+independently accept the full model agreement before downloading or using them.
+The agreement and upstream notice are reproduced in legal/BREEZE_LICENSE.txt
+and legal/BREEZE_NOTICE.txt.
+
+The narration samples in web/voices/ and built-in clips in anchors/ are
+Breeze-generated audio, not recordings of real speakers. They are subject
+to the model agreement's non-commercial terms, not the project's code licence.
+Generated audio remains subject to the model agreement and the user's rights
+to their book text and reference audio. AGPL licensing of the code does not
+remove those restrictions or imply endorsement by RESONIA or BreezeBlue.

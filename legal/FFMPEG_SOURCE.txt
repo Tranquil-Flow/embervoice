@@ -1,0 +1,7 @@
+FFmpeg 9.0.2 is LGPL-2.1-or-later, built with GPL and nonfree components disabled.
+Complete corresponding source is bundled as ffmpeg-9.0.2.tar.xz beside this notice.
+Upstream source: https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz
+SHA-256: 8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e
+Build configuration: FFMPEG_BUILD.json. Build/relink procedure: scripts/build_ffmpeg.py in the Embervoice source repository.
+You may modify and rebuild this separate executable and replace the bundled ffmpeg/ffprobe tools for your own use.
+The app has no code preventing replacement or debugging of these components. The surrounding app may require re-signing after modification.

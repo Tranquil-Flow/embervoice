@@ -1,0 +1,29 @@
+name: checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-contracts:
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.26'
+      - run: uv sync --locked --extra test --no-dev
+      - run: uv run --locked --no-sync python scripts/build_ffmpeg.py
+      - run: uv run --locked --no-sync playwright install chromium
+      - run: PATH="$PWD/.local/tools:$PATH" uv run --locked --no-sync python -m pytest -q
+      - run: uv run --locked --no-sync ruff check .
+      - run: uv run --locked --no-sync ruff format --check .
+      - run: node --check web/app.js && node --check web/setup.js
+      - run: bash -n install.sh Install.command 'Start Embervoice.command'
+      - run: uv build && uv run --locked --no-sync python scripts/build_release.py
