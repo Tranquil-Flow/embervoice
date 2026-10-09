@@ -140,6 +140,7 @@ build = [
 ]
 test = [
     { name = "httpx" },
+    { name = "numpy" },
     { name = "playwright" },
     { name = "pytest" },
     { name = "ruff" },
@@ -160,6 +161,7 @@ requires-dist = [
     { name = "lxml", specifier = ">=5,<7" },
     { name = "mlx", marker = "extra == 'voice'", specifier = "==0.32.3" },
     { name = "mlx-audio", marker = "extra == 'voice'", url = "https://github.com/Blaizzy/mlx-audio/archive/feb25a37b07923bae556e59111995071d66afa0d.tar.gz" },
+    { name = "numpy", marker = "extra == 'test'", specifier = "==2.5.3" },
     { name = "numpy", marker = "extra == 'voice'", specifier = "==2.5.3" },
     { name = "playwright", marker = "extra == 'test'", specifier = "==1.63.0" },
     { name = "pyinstaller", marker = "extra == 'build'", specifier = "==6.22.3" },

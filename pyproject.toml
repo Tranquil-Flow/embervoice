@@ -11,7 +11,7 @@ dependencies = ["EbookLib==0.20", "beautifulsoup4>=4.12,<5", "lxml>=5,<7", "fast
 [project.optional-dependencies]
 build = ["pyinstaller==6.22.3"]
 voice = ["mlx-audio @ https://github.com/Blaizzy/mlx-audio/archive/feb25a37b07923bae556e59111995071d66afa0d.tar.gz", "mlx==0.32.3", "numpy==2.5.3"]
-test = ["pytest>=8,<10", "httpx==0.28.1", "playwright==1.63.0", "ruff>=0.14,<1"]
+test = ["pytest>=8,<10", "httpx==0.28.1", "playwright==1.63.0", "ruff>=0.14,<1", "numpy==2.5.3"]
 
 [project.scripts]
 epub-audiobook = "audiobook:main"

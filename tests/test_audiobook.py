@@ -558,12 +558,28 @@ def test_voice_clip_softens_the_written_direction_and_marks_only_clip_versions(t
     from setup_fakes import ReadySetup
 
     monkeypatch.setattr(audiobook, "ModelSetup", lambda *a: ReadySetup())
-    monkeypatch.setitem(sys.modules, "mlx_audio.tts", types.SimpleNamespace(load=lambda path: Model()))
+    # Exercise synth configuration, not the host's installed GPU runtime.
+    # A minimal --extra test environment must not import or allocate real MLX.
+    limits = []
+    mx = types.ModuleType("mlx.core")
+    mx.__dict__.update(
+        set_memory_limit=lambda value: limits.append(("memory", value)),
+        set_cache_limit=lambda value: limits.append(("cache", value)),
+    )
+    mlx = types.ModuleType("mlx")
+    mlx.__dict__.update(__path__=[], core=mx)
+    audio = types.ModuleType("mlx_audio")
+    tts = types.ModuleType("mlx_audio.tts")
+    tts.__dict__.update(load=lambda path: Model())
+    audio.__dict__.update(__path__=[], tts=tts)
+    for name, module in {"mlx": mlx, "mlx.core": mx, "mlx_audio": audio, "mlx_audio.tts": tts}.items():
+        monkeypatch.setitem(sys.modules, name, module)
     clip = tmp_path / "clip.wav"
     clip.write_bytes(b"x")
     audiobook.mlx_synth(tmp_path, clip, "Exact words")(tmp_path / "a.wav", "Hello.", "Warm", 1)
     audiobook.mlx_synth(tmp_path)(tmp_path / "b.wav", "Hello.", "Warm", 1)
     assert seen == [(audiobook.CLIP_CFG, str(clip)), (audiobook.STYLE_CFG, None)]
+    assert limits == [("memory", 8 * 2**30), ("cache", 1 * 2**30)] * 2
     assert audiobook.CLIP_CFG < audiobook.STYLE_CFG
 
     source = sample_epub(tmp_path / "book.epub")
